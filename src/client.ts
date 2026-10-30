@@ -349,7 +349,10 @@ export function createTestTHSClient(options: TestTHSClientOptions = {}) {
         `payment ${idempotencyKey}`,
         opts.timeoutMs ?? 120_000,
       );
-      return finalOrThrow(entry!);
+      const settled = finalOrThrow(entry!);
+      // A lookup by key returns a compact record (no memos, pools per account); the feed has the full one.
+      const full = (await client.getActivity()).find((a) => a.txid === settled.txid);
+      return { ...full, ...settled, ...(full && { memos: full.memos }) } as Activity;
     },
 
     getActivity: (opts: { limit?: number } = {}) =>
