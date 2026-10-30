@@ -1,0 +1,47 @@
+{
+  "name": "ths-js",
+  "version": "0.1.0",
+  "description": "Programmatic Thus Spoke Zakura: start disposable Zcash regtest networks and drive them from JavaScript tests",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lopeselio/ths-js.git"
+  },
+  "homepage": "https://github.com/lopeselio/ths-js#readme",
+  "bugs": {
+    "url": "https://github.com/lopeselio/ths-js/issues"
+  },
+  "engines": {
+    "node": ">=22.18"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.build.json && node scripts/fix-dts.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts",
+    "test:integration": "THS_INTEGRATION=1 node --test --test-timeout=900000 test/integration.test.ts",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "keywords": [
+    "zcash",
+    "regtest",
+    "testing",
+    "zakura",
+    "ths"
+  ],
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.8.0"
+  }
+}
