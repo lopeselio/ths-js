@@ -58,7 +58,7 @@ describe('createTestTHSClient against a mock dashboard', () => {
   });
 
   it('sends with a memo and infers pools', async () => {
-    const payment = await ths.send({ from: 1, to: 'tmSomeone', amount: 5000n, memo: 'order 42', idempotencyKey: 'k1' });
+    const payment = await ths.send({ from: 1, to: 'tmSomeone', amount: 5000n, memo: 'order 42', idempotencyKey: 'key-0001' });
     assert.equal(payment.status, 'confirmed');
     assert.deepEqual(payment.memos, ['order 42']);
     const body = mock.requests.find((r) => r.path === '/api/v1/send')?.body as Record<string, unknown>;
@@ -119,15 +119,23 @@ describe('payment edge cases', () => {
     const ths = createTestTHSClient({ attach: { apiUrl: mock.url } });
     await ths.start();
     assert.equal(ths.config().miningMode, 'manual');
-    const accepted = await ths.send({ from: 1, to: 2, amount: 1n, idempotencyKey: 'm1' });
+    const accepted = await ths.send({ from: 1, to: 2, amount: 1n, idempotencyKey: 'manual-01' });
     assert.equal(accepted.status, 'broadcast');
-    assert.equal((await ths.waitForPayment('m1')).status, 'confirmed');
+    assert.equal((await ths.waitForPayment('manual-01')).status, 'confirmed');
     await mock.close();
   });
 
   it('refuses calls before start', () => {
     const ths = createTestTHSClient({ attach: { apiUrl: 'http://127.0.0.1:1' } });
     assert.throws(() => ths.config(), THSError);
+  });
+
+  it('rejects idempotency keys THS would refuse', async () => {
+    const mock = await startMockTHS();
+    const ths = createTestTHSClient({ attach: { apiUrl: mock.url } });
+    await ths.start();
+    await assert.rejects(ths.send({ from: 1, to: 2, amount: 1n, idempotencyKey: 'short' }), /8-128 characters/);
+    await mock.close();
   });
 
   it('rejects unsafe amounts', async () => {

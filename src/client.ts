@@ -70,6 +70,12 @@ export interface SendParams {
   waitFor?: WaitFor;
 }
 
+function idempotencyKey(key?: string): string {
+  if (key === undefined) return randomUUID();
+  if (key.length < 8 || key.length > 128) throw new RangeError('idempotencyKey must contain 8-128 characters');
+  return key;
+}
+
 const SEED_CONFIRMATION = 'I understand this seed is for regtest only';
 const FINAL: PaymentStatus[] = ['confirmed', 'failed'];
 
@@ -281,7 +287,7 @@ export function createTestTHSClient(options: TestTHSClientOptions = {}) {
 
     /** Fund an account or address from the treasury. */
     async faucet(params: FaucetParams): Promise<Activity | AddressFaucetResult> {
-      const key = params.idempotencyKey ?? randomUUID();
+      const key = idempotencyKey(params.idempotencyKey);
       const amount_zatoshi = toApiZatoshi(params.amount);
       const waitFor = params.waitFor ?? defaultWait();
       if (typeof params.to === 'number') {
@@ -311,7 +317,7 @@ export function createTestTHSClient(options: TestTHSClientOptions = {}) {
 
     /** Pay from a development account to another account or a regtest address. */
     async send(params: SendParams): Promise<Activity> {
-      const key = params.idempotencyKey ?? randomUUID();
+      const key = idempotencyKey(params.idempotencyKey);
       const toAddress = typeof params.to === 'string';
       const accepted = await post<Activity>('/api/v1/send', {
         from_account: params.from,
