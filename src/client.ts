@@ -148,8 +148,9 @@ export function createTestTHSClient(options: TestTHSClientOptions = {}) {
           ...instance.endpoints,
         };
         const status = await client.waitForSettled();
-        cfg.miningMode = status.mining_mode;
-        cfg.blockTime = status.block_time;
+        // THS ≤ 0.4.1 reports only `auto_mine`; `mining_mode` arrived later.
+        cfg.miningMode = status.mining_mode ?? (status.auto_mine ? 'auto' : cfg.miningMode);
+        cfg.blockTime = status.block_time ?? cfg.blockTime;
         return { ...cfg };
       })();
       try {

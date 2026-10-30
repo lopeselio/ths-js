@@ -151,3 +151,17 @@ describe('units', () => {
     assert.equal(formatZec(-200_000_000n), '-2');
   });
 });
+
+describe('older THS servers', () => {
+  it('derives auto mining from auto_mine when mining_mode is absent (THS 0.4.1)', async () => {
+    const mock = await startMockTHS({ legacyStatus: true });
+    const ths = createTestTHSClient({ attach: { apiUrl: mock.url } });
+    await ths.start();
+    try {
+      assert.equal(ths.config().miningMode, 'auto');
+      assert.equal((await ths.send({ from: 1, to: 2, amount: 1n })).status, 'confirmed');
+    } finally {
+      await mock.close();
+    }
+  });
+});

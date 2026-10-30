@@ -18,7 +18,7 @@ export interface MockTHS {
   close(): Promise<void>;
 }
 
-export async function startMockTHS(opts: { miningMode?: string; failPayments?: boolean } = {}): Promise<MockTHS> {
+export async function startMockTHS(opts: { miningMode?: string; failPayments?: boolean; legacyStatus?: boolean } = {}): Promise<MockTHS> {
   const sse = new Set<ServerResponse>();
   const accounts = [1, 2, 3, 4, 5].map((id) => ({
     id,
@@ -90,7 +90,7 @@ export async function startMockTHS(opts: { miningMode?: string; failPayments?: b
           instance: 'mock',
           node: { blocks: state.height, bestblockhash: 'ab'.repeat(32) },
           account_count: 5,
-          mining_mode: opts.miningMode ?? 'auto',
+          mining_mode: opts.legacyStatus ? undefined : (opts.miningMode ?? 'auto'),
           auto_mine: (opts.miningMode ?? 'auto') === 'auto',
           block_time: null,
           mine_on_mempool: false,

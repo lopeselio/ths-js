@@ -44,10 +44,11 @@ export interface Status {
   instance: string;
   node: ChainInfo | null;
   account_count: number;
-  mining_mode: MiningMode;
+  /** Absent in THS 0.4.1, which reports only `auto_mine`. */
+  mining_mode?: MiningMode;
   auto_mine: boolean;
-  block_time: number | null;
-  mine_on_mempool: boolean;
+  block_time?: number | null;
+  mine_on_mempool?: boolean;
   network: string;
   endpoints: { dashboard: string; zakura_rpc: string; lightwalletd: string; p2p: string };
   wallet_sync: WalletSync;
