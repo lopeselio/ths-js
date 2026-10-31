@@ -31,7 +31,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test test/*.test.ts",
     "test:integration": "THS_INTEGRATION=1 node --test --test-timeout=900000 test/integration.test.ts",
-    "check": "npm run typecheck && npm test && npm run build"
+    "check": "npm run typecheck && npm test && npm run build",
+    "prepare": "npm run build"
   },
   "keywords": [
     "zcash",
