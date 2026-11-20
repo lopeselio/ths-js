@@ -23,13 +23,22 @@ point zcash.js at `config.rpcUrl` / `config.lightwalletdUrl` to test a real ligh
 
 > Regtest only. Development keys are public and fixed. Never send real funds to these addresses.
 
-## Requirements (today)
+## Requirements
 
 - Node 22.18+
 - The `ths` launcher (`curl -fsSL https://raw.githubusercontent.com/zcashlabs/thus-spoke-zakura/main/install.sh | sh`)
-  and a running Docker engine. See [DOCKERLESS.md](DOCKERLESS.md) for the plan to drop Docker.
+  and either a running Docker engine or THS's native runtime.
 
-Tested against THS 0.4.1 and the API on `main`. The launcher is found via `THS_BIN`, then `ths` on `PATH`, then `~/.local/bin/ths`.
+THS can run without Docker since [thus-spoke-zakura#452](https://github.com/zcashlabs/thus-spoke-zakura/pull/452).
+Set `THS_NATIVE=1` (or `cliRuntime({ native: true })`) to start instances with `ths start --native`. The launcher
+finds its runtime bundle through `THS_RUNTIME_DIR` (or `cliRuntime({ runtimeDir })`), then its installed bundle. A
+native instance starts and settles in seconds. Native bundles aren't in a THS release yet; until they are, build one
+from source as described in THS's `RELEASING.md`.
+
+> zcash.js is adding an official equivalent of this package, `@zcashlabs/zcash.js/testing`
+> ([zcashjs#26](https://github.com/zcashlabs/zcashjs/issues/26)). Prefer it once it is released.
+
+Tested against THS 0.4.1 (Docker) and the native runtime on THS `main`. The launcher is found via `THS_BIN`, then `ths` on `PATH`, then `~/.local/bin/ths`.
 
 ## Test-runner setup
 
@@ -97,13 +106,13 @@ A `Runtime` turns `{ name, mining, portOffset, ... }` into a running instance wi
 - `cliRuntime({ bin })` (default) spawns `ths --name <n> start --no-open`, polls `ths wait` / `ths endpoints`,
   and stops with SIGINT so THS runs its own bounded cleanup.
 - `attachRuntime({ apiUrl })` uses an existing instance.
-- A native runtime (prebuilt binaries, no Docker) slots in here; see [DOCKERLESS.md](DOCKERLESS.md).
+- The native runtime (no Docker) is the same `cliRuntime` with `native: true`.
 
 ## Develop
 
 ```sh
 npm install
 npm test                 # unit tests: mock dashboard + fake launcher, no Docker
-npm run test:integration # real THS (needs ths + Docker)
+npm run test:integration # real THS (needs ths + Docker, or THS_NATIVE=1)
 npm run build
 ```

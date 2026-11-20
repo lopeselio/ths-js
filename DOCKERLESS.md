@@ -1,5 +1,9 @@
 # THS without Docker: proposal
 
+> **Status (2026-11-20):** THS implemented this in
+> [thus-spoke-zakura#452](https://github.com/zcashlabs/thus-spoke-zakura/pull/452) (`ths start --native`), and ths-js
+> supports it with `THS_NATIVE=1`. This document is kept for its reasoning.
+
 Goal (from the THS Discord thread): `npm i ths` and `createTestTHSClient().start()` should work on a machine with
 no Docker, the way Foundry's `anvil` is a single prebuilt binary.
 

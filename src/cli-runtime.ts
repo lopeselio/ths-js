@@ -12,22 +12,34 @@ export interface CliRuntimeOptions {
   bin?: string;
   /** Milliseconds to wait for Ctrl+C cleanup before killing the launcher. Default 120 s. */
   stopTimeoutMs?: number;
+  /** Run THS's local binaries instead of Docker (`ths start --native`). Default: `THS_NATIVE=1`. */
+  native?: boolean;
+  /** Native runtime bundle. Default: the launcher's own choice (`THS_RUNTIME_DIR`, then its installed bundle). */
+  runtimeDir?: string;
 }
 
 // Default host ports; `--port-offset` shifts all four as a block (book/connect-an-app.md).
 const BASE_PORTS = [32805, 18232, 18233, 9067];
 const LOG_TAIL = 60;
 
-/** Runs instances through the installed `ths` launcher (`ths start`), which currently needs Docker. */
+/** Runs instances through the installed `ths` launcher (`ths start`), in Docker or natively. */
 export function cliRuntime(options: CliRuntimeOptions = {}): Runtime {
   const bin = options.bin ?? resolveBin();
   const stopTimeoutMs = options.stopTimeoutMs ?? 120_000;
+  const native = options.native ?? process.env.THS_NATIVE === '1';
 
   return {
     kind: 'cli',
     async start(start) {
-      const portOffset = start.portOffset ?? (await findPortOffset());
-      const args = ['--name', start.name, 'start', '--no-open', '--port-offset', String(portOffset), ...miningArgs(start)];
+      // Native startup allocates free loopback ports itself when the offset is zero.
+      const portOffset = start.portOffset ?? (native ? 0 : await findPortOffset());
+      const args = ['--name', start.name, 'start', '--no-open', '--port-offset', String(portOffset)];
+      if (native) {
+        // The launcher bounds native startup itself and defaults to 180 s, below our own default.
+        args.push('--native', '--timeout', String(Math.ceil(start.timeoutMs / 1000)));
+        if (options.runtimeDir) args.push('--runtime-dir', options.runtimeDir);
+      }
+      args.push(...miningArgs(start));
       const tail: string[] = [];
       const log = (line: string) => {
         tail.push(line);
@@ -57,13 +69,16 @@ export function cliRuntime(options: CliRuntimeOptions = {}): Runtime {
       const stop = () =>
         (stopping ??= (async () => {
           process.removeListener('exit', onExit);
+          let interrupted = false;
           if (exitCode === undefined) {
-            child.kill('SIGINT');
+            interrupted = child.kill('SIGINT');
             const timer = setTimeout(() => child.kill('SIGKILL'), stopTimeoutMs);
             exitCode = await exited;
             clearTimeout(timer);
           }
-          if (exitCode !== 0) {
+          // The native launcher reports our SIGINT as 128 + 2, and only after verified cleanup;
+          // a cleanup failure exits 1. The Docker launcher exits 0.
+          if (exitCode !== 0 && !(native && interrupted && exitCode === 130)) {
             throw new THSError(`ths cleanup for ${start.name} exited with ${exitCode}:\n${tail.join('\n')}`);
           }
         })());

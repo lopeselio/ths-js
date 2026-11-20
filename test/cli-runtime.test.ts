@@ -49,6 +49,31 @@ describe('cliRuntime driving a fake ths launcher', () => {
     assert.ok(logs.includes('Deleting unit'));
   });
 
+  it('starts the native runtime on free ports and accepts its 130 after an interrupted cleanup', async () => {
+    // The native launcher exits 128 + SIGINT once it has verified cleanup after our SIGINT.
+    process.env.FAKE_THS_STOP_CODE = '130';
+    try {
+      const ths = createTestTHSClient({
+        name: 'native',
+        startTimeoutMs: 90_000,
+        runtime: cliRuntime({ bin: FAKE, native: true, runtimeDir: '/opt/ths-runtime' }),
+      });
+      await ths.start();
+      await ths.stop();
+      const calls = readFileSync(process.env.FAKE_THS_LOG!, 'utf8');
+      assert.match(
+        calls,
+        /^--name native start --no-open --port-offset 0 --native --timeout 90 --runtime-dir \/opt\/ths-runtime$/m,
+      );
+
+      const docker = createTestTHSClient({ name: 'docker130', runtime: cliRuntime({ bin: FAKE }), portOffset: 0 });
+      await docker.start();
+      await assert.rejects(docker.stop(), /cleanup for docker130 exited with 130/);
+    } finally {
+      delete process.env.FAKE_THS_STOP_CODE;
+    }
+  });
+
   it('reports launcher output when start fails', async () => {
     process.env.FAKE_THS_START_FAIL = '1';
     try {
