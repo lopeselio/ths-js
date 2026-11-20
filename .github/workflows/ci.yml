@@ -31,5 +31,5 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: curl --proto '=https' --tlsv1.2 -fsSL https://raw.githubusercontent.com/zcashlabs/thus-spoke-zakura/main/install.sh | sh
+      - run: curl --proto '=https' --tlsv1.2 -fsSL --retry 5 --retry-all-errors --retry-delay 10 https://raw.githubusercontent.com/zcashlabs/thus-spoke-zakura/main/install.sh | sh
       - run: npm run test:integration
